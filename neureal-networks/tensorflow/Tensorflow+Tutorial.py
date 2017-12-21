@@ -126,17 +126,17 @@ def linear_function():
     np.random.seed(1)
     
     ### START CODE HERE ### (4 lines of code)
-    X = None
-    W = None
-    b = None
-    Y = None
+    X = tf.constant(np.random.randn(3,1), name = "X")
+    W = tf.constant(np.random.randn(4,3), name = "W")
+    b = tf.constant(np.random.randn(4,1), name = "b")
+    Y = tf.add(tf.matmul(W, X), b) 
     ### END CODE HERE ### 
     
     # Create the session using tf.Session() and run it with sess.run(...) on the variable you want to calculate
     
     ### START CODE HERE ###
-    sess = None
-    result = None
+    sess = tf.Session() 
+    result = sess.run(Y) 
     ### END CODE HERE ### 
     
     # close the session 
@@ -214,16 +214,16 @@ def sigmoid(z):
     
     ### START CODE HERE ### ( approx. 4 lines of code)
     # Create a placeholder for x. Name it 'x'.
-    x = None
+    x = tf.placeholder(tf.float32, name = 'x')
 
     # compute sigmoid(x)
-    sigmoid = None
+    sigmoid = tf.sigmoid(x)
 
     # Create a session, and run it. Please use the method 2 explained above. 
     # You should use a feed_dict to pass z's value to x. 
-    None
+    with tf.Session() as session:                 
         # Run session and call the output "result"
-        result = None
+        result = session.run(sigmoid, feed_dict = {x:z}) 
     
     ### END CODE HERE ###
     
@@ -305,20 +305,20 @@ def cost(logits, labels):
     ### START CODE HERE ### 
     
     # Create the placeholders for "logits" (z) and "labels" (y) (approx. 2 lines)
-    z = None
-    y = None
+    z = tf.placeholder(tf.float32, name = 'z')
+    y = tf.placeholder(tf.float32, name = 'y')
     
     # Use the loss function (approx. 1 line)
-    cost = None
+    cost = tf.nn.sigmoid_cross_entropy_with_logits(labels=y,logits=z, name=None)
     
     # Create a session (approx. 1 line). See method 1 above.
-    sess = None
+    sess = tf.Session()
     
     # Run the session (approx. 1 line).
-    cost = None
+    cost = sess.run(cost, feed_dict={z: logits, y: labels})
     
     # Close the session (approx. 1 line). See method 1 above.
-    None
+    sess.close()
     
     ### END CODE HERE ###
     
