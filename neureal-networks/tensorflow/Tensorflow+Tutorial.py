@@ -380,19 +380,19 @@ def one_hot_matrix(labels, C):
     ### START CODE HERE ###
     
     # Create a tf.constant equal to C (depth), name it 'C'. (approx. 1 line)
-    C = None
+    C = tf.constant(C, name='C')
     
     # Use tf.one_hot, be careful with the axis (approx. 1 line)
-    one_hot_matrix = None
+    one_hot_matrix = tf.one_hot(indices=labels, depth=C, axis=0)
     
     # Create the session (approx. 1 line)
-    sess = None
+    sess = tf.Session()
     
     # Run the session (approx. 1 line)
-    one_hot = None
+    one_hot = sess.run(one_hot_matrix)
     
     # Close the session (approx. 1 line). See method 1 above.
-    None
+    sess.close()
     
     ### END CODE HERE ###
     
@@ -451,16 +451,16 @@ def ones(shape):
     ### START CODE HERE ###
     
     # Create "ones" tensor using tf.ones(...). (approx. 1 line)
-    ones = None
+    ones = tf.ones(shape)
     
     # Create the session (approx. 1 line)
-    sess = None
+    sess = tf.Session()
     
     # Run the session to compute 'ones' (approx. 1 line)
-    ones = None
+    ones = sess.run(ones)
     
     # Close the session (approx. 1 line). See method 1 above.
-    None
+    sess.close()
     
     ### END CODE HERE ###
     return ones
@@ -581,8 +581,8 @@ def create_placeholders(n_x, n_y):
     """
 
     ### START CODE HERE ### (approx. 2 lines)
-    X = None
-    Y = None
+    X = tf.placeholder(tf.float32, shape=[n_x, None])
+    Y = tf.placeholder(tf.float32, shape=[n_y, None])
     ### END CODE HERE ###
     
     return X, Y
@@ -650,12 +650,12 @@ def initialize_parameters():
     tf.set_random_seed(1)                   # so that your "random" numbers match ours
         
     ### START CODE HERE ### (approx. 6 lines of code)
-    W1 = None
-    b1 = None
-    W2 = None
-    b2 = None
-    W3 = None
-    b3 = None
+    W1 = tf.get_variable("W1", [25,12288], initializer = tf.contrib.layers.xavier_initializer(seed = 1))
+    b1 = tf.get_variable("b1", [25,1], initializer = tf.zeros_initializer())
+    W2 = tf.get_variable("W2", [12,25], initializer = tf.contrib.layers.xavier_initializer(seed = 1))
+    b2 = tf.get_variable("b2", [12,1], initializer = tf.zeros_initializer())
+    W3 = tf.get_variable("W3", [6,12], initializer = tf.contrib.layers.xavier_initializer(seed = 1))
+    b3 = tf.get_variable("b3", [6,1], initializer = tf.zeros_initializer())
     ### END CODE HERE ###
 
     parameters = {"W1": W1,
@@ -757,11 +757,11 @@ def forward_propagation(X, parameters):
     b3 = parameters['b3']
     
     ### START CODE HERE ### (approx. 5 lines)              # Numpy Equivalents:
-    Z1 = None                                              # Z1 = np.dot(W1, X) + b1
-    A1 = None                                              # A1 = relu(Z1)
-    Z2 = None                                              # Z2 = np.dot(W2, a1) + b2
-    A2 = None                                              # A2 = relu(Z2)
-    Z3 = None                                              # Z3 = np.dot(W3,Z2) + b3
+    Z1 = tf.add(tf.matmul(W1, X), b1)                                              # Z1 = np.dot(W1, X) + b1
+    A1 = tf.nn.relu(Z1)                                              # A1 = relu(Z1)
+    Z2 = tf.add(tf.matmul(W2, A1), b2)                                              # Z2 = np.dot(W2, a1) + b2
+    A2 = tf.nn.relu(Z2)                                              # A2 = relu(Z2)
+    Z3 = tf.add(tf.matmul(W3, A2), b3)                                               # Z3 = np.dot(W3,Z2) + b3
     ### END CODE HERE ###
     
     return Z3
@@ -825,7 +825,7 @@ def compute_cost(Z3, Y):
     labels = tf.transpose(Y)
     
     ### START CODE HERE ### (1 line of code)
-    cost = None
+    cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits = logits, labels = labels))
     ### END CODE HERE ###
     
     return cost
@@ -913,27 +913,27 @@ def model(X_train, Y_train, X_test, Y_test, learning_rate = 0.0001,
     
     # Create Placeholders of shape (n_x, n_y)
     ### START CODE HERE ### (1 line)
-    X, Y = None
+    X, Y = create_placeholders(n_x, n_y)
     ### END CODE HERE ###
 
     # Initialize parameters
     ### START CODE HERE ### (1 line)
-    parameters = None
+    parameters = initialize_parameters()
     ### END CODE HERE ###
     
     # Forward propagation: Build the forward propagation in the tensorflow graph
     ### START CODE HERE ### (1 line)
-    Z3 = None
+    Z3 = forward_propagation(X, parameters)
     ### END CODE HERE ###
     
     # Cost function: Add cost function to tensorflow graph
     ### START CODE HERE ### (1 line)
-    cost = None
+    cost = compute_cost(Z3, Y)
     ### END CODE HERE ###
     
     # Backpropagation: Define the tensorflow optimizer. Use an AdamOptimizer.
     ### START CODE HERE ### (1 line)
-    optimizer = None
+    optimizer = tf.train.AdamOptimizer(learning_rate = learning_rate).minimize(cost)
     ### END CODE HERE ###
     
     # Initialize all the variables
@@ -961,7 +961,7 @@ def model(X_train, Y_train, X_test, Y_test, learning_rate = 0.0001,
                 # IMPORTANT: The line that runs the graph on a minibatch.
                 # Run the session to execute the "optimizer" and the "cost", the feedict should contain a minibatch for (X,Y).
                 ### START CODE HERE ### (1 line)
-                _ , minibatch_cost = None
+                _ , minibatch_cost = sess.run([optimizer, cost], feed_dict={X: minibatch_X, Y: minibatch_Y})
                 ### END CODE HERE ###
                 
                 epoch_cost += minibatch_cost / num_minibatches
@@ -998,9 +998,11 @@ def model(X_train, Y_train, X_test, Y_test, learning_rate = 0.0001,
 # Run the following cell to train your model! On our machine it takes about 5 minutes. Your "Cost after epoch 100" should be 1.016458. If it's not, don't waste time; interrupt the training by clicking on the square (⬛) in the upper bar of the notebook, and try to correct your code. If it is the correct cost, take a break and come back in 5 minutes!
 
 # In[ ]:
+import time
 
+t = time.time()
 parameters = model(X_train, Y_train, X_test, Y_test)
-
+print("running time: %fs"  % (time.time() - t))
 
 # **Expected Output**:
 # 
