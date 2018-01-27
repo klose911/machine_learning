@@ -13,6 +13,11 @@
 
 # In[ ]:
 
+
+
+
+# In[1]:
+
 import numpy as np
 from keras import layers
 from keras.layers import Input, Dense, Activation, ZeroPadding2D, BatchNormalization, Flatten, Conv2D
@@ -33,7 +38,17 @@ K.set_image_data_format('channels_last')
 import matplotlib.pyplot as plt
 from matplotlib.pyplot import imshow
 
-get_ipython().magic('matplotlib inline')
+#get_ipython().magic('matplotlib inline')
+
+
+# In[ ]:
+
+
+
+
+# In[ ]:
+
+
 
 
 # **Note**: As you can see, we've imported a lot of functions from Keras. You can use them easily just by calling them directly in the notebook. Ex: `X = Input(...)` or `X = ZeroPadding2D(...)`.
@@ -54,7 +69,7 @@ get_ipython().magic('matplotlib inline')
 # 
 # Run the following code to normalize the dataset and learn about its shapes.
 
-# In[ ]:
+# In[2]:
 
 X_train_orig, Y_train_orig, X_test_orig, Y_test_orig, classes = load_dataset()
 
@@ -72,6 +87,11 @@ print ("X_train shape: " + str(X_train.shape))
 print ("Y_train shape: " + str(Y_train.shape))
 print ("X_test shape: " + str(X_test.shape))
 print ("Y_test shape: " + str(Y_test.shape))
+
+
+# In[ ]:
+
+
 
 
 # **Details of the "Happy" dataset**:
@@ -121,6 +141,11 @@ print ("Y_test shape: " + str(Y_test.shape))
 
 # In[ ]:
 
+
+
+
+# In[3]:
+
 # GRADED FUNCTION: HappyModel
 
 def HappyModel(input_shape):
@@ -138,11 +163,35 @@ def HappyModel(input_shape):
     # Feel free to use the suggested outline in the text above to get started, and run through the whole
     # exercise (including the later portions of this notebook) once. The come back also try out other
     # network architectures as well. 
-    
+       # Define the input placeholder as a tensor with shape input_shape. Think of this as your input image!
+    X_input = Input(input_shape)
+
+    # Zero-Padding: pads the border of X_input with zeroes
+    X = ZeroPadding2D((3, 3))(X_input)
+
+    # CONV -> BN -> RELU Block applied to X
+    X = Conv2D(32, (7, 7), strides = (1, 1), name = 'conv0')(X)
+    X = BatchNormalization(axis = 3, name = 'bn0')(X)
+    X = Activation('relu')(X)
+
+    # MAXPOOL
+    X = MaxPooling2D((2, 2), name='max_pool')(X)
+
+    # FLATTEN X (means convert it to a vector) + FULLYCONNECTED
+    X = Flatten()(X)
+    X = Dense(1, activation='sigmoid', name='fc')(X)
+
+    # Create model. This creates your Keras model instance, you'll use this instance to train/test the model.
+    model = Model(inputs = X_input, outputs = X, name='HappyModel')
     
     ### END CODE HERE ###
     
     return model
+
+
+# In[ ]:
+
+
 
 
 # You have now built a function to describe your model. To train and test this model, there are four steps in Keras:
@@ -155,43 +204,88 @@ def HappyModel(input_shape):
 # 
 # **Exercise**: Implement step 1, i.e. create the model.
 
-# In[ ]:
+# In[5]:
 
 ### START CODE HERE ### (1 line)
-happyModel = None
+happyModel = HappyModel((X_train.shape[1], X_train.shape[2],X_train.shape[3] ))
 ### END CODE HERE ###
+
+
+# In[ ]:
+
+
+
+
+# In[ ]:
+
+
 
 
 # **Exercise**: Implement step 2, i.e. compile the model to configure the learning process. Choose the 3 arguments of `compile()` wisely. Hint: the Happy Challenge is a binary classification problem.
 
-# In[ ]:
+# In[7]:
 
 ### START CODE HERE ### (1 line)
-None
+happyModel.compile(optimizer = "adam", loss = "binary_crossentropy", metrics = ["accuracy"])
 ### END CODE HERE ###
+
+
+# In[ ]:
+
+
+
+
+# In[ ]:
+
+
 
 
 # **Exercise**: Implement step 3, i.e. train the model. Choose the number of epochs and the batch size.
 
-# In[ ]:
+# In[10]:
 
 ### START CODE HERE ### (1 line)
-None
+happyModel.fit(x = X_train, y = Y_train, epochs = 100, batch_size = 32)
 ### END CODE HERE ###
+
+
+# In[ ]:
+
+
+
+
+# In[ ]:
+
+
+
+
+# In[ ]:
+
+
 
 
 # Note that if you run `fit()` again, the `model` will continue to train with the parameters it has already learnt instead of reinitializing them.
 # 
 # **Exercise**: Implement step 4, i.e. test/evaluate the model.
 
-# In[ ]:
+# In[12]:
 
 ### START CODE HERE ### (1 line)
-preds = None
+preds = happyModel.evaluate(x = X_test, y = Y_test)
 ### END CODE HERE ###
 print()
 print ("Loss = " + str(preds[0]))
 print ("Test Accuracy = " + str(preds[1]))
+
+
+# In[ ]:
+
+
+
+
+# In[ ]:
+
+
 
 
 # If your `happyModel()` function worked, you should have observed much better than random-guessing (50%) accuracy on the train and test sets.
@@ -217,6 +311,11 @@ print ("Test Accuracy = " + str(preds[1]))
 # **Note**: If you perform hyperparameter tuning on your model, the test set actually becomes a dev set, and your model might end up overfitting to the test (dev) set. But just for the purpose of this assignment, we won't worry about that here.
 # 
 
+# In[ ]:
+
+
+
+
 # ## 3 - Conclusion
 # 
 # Congratulations, you have solved the Happy House challenge! 
@@ -238,7 +337,7 @@ print ("Test Accuracy = " + str(preds[1]))
 #     
 # The training/test sets were quite similar; for example, all the pictures were taken against the same background (since a front door camera is always mounted in the same position). This makes the problem easier, but a model trained on this data may or may not work on your own data. But feel free to give it a try! 
 
-# In[ ]:
+# In[13]:
 
 ### START CODE HERE ###
 img_path = 'images/my_image.jpg'
@@ -253,6 +352,11 @@ x = preprocess_input(x)
 print(happyModel.predict(x))
 
 
+# In[ ]:
+
+
+
+
 # ## 5 - Other useful functions in Keras (Optional)
 # 
 # Two other basic features of Keras that you'll find useful are:
@@ -261,13 +365,23 @@ print(happyModel.predict(x))
 # 
 # Run the following code.
 
-# In[ ]:
+# In[14]:
 
 happyModel.summary()
 
 
 # In[ ]:
 
+
+
+
+# In[15]:
+
 plot_model(happyModel, to_file='HappyModel.png')
 SVG(model_to_dot(happyModel).create(prog='dot', format='svg'))
+
+
+# In[ ]:
+
+
 

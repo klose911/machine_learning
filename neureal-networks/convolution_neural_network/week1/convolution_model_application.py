@@ -20,7 +20,7 @@
 # 
 # As usual, we will start by loading in the packages. 
 
-# In[1]:
+# In[11]:
 
 import math
 import numpy as np
@@ -33,26 +33,16 @@ import tensorflow as tf
 from tensorflow.python.framework import ops
 from cnn_utils import *
 
-get_ipython().magic('matplotlib inline')
+#get_ipython().magic('matplotlib inline')
 np.random.seed(1)
-
-
-# In[ ]:
-
-
 
 
 # Run the next cell to load the "SIGNS" dataset you are going to use.
 
-# In[2]:
+# In[12]:
 
 # Loading the data (signs)
 X_train_orig, Y_train_orig, X_test_orig, Y_test_orig, classes = load_dataset()
-
-
-# In[ ]:
-
-
 
 
 # As a reminder, the SIGNS dataset is a collection of 6 signs representing numbers from 0 to 5.
@@ -78,24 +68,18 @@ print ("y = " + str(np.squeeze(Y_train_orig[:, index])))
 # 
 # To get started, let's examine the shapes of your data. 
 
-# In[4]:
+# In[13]:
 
 X_train = X_train_orig/255.
 X_test = X_test_orig/255.
 Y_train = convert_to_one_hot(Y_train_orig, 6).T
 Y_test = convert_to_one_hot(Y_test_orig, 6).T
 print ("number of training examples = " + str(X_train.shape[0]))
-# number of training examples = 1080
 print ("number of test examples = " + str(X_test.shape[0]))
-# number of test examples = 120
 print ("X_train shape: " + str(X_train.shape))
-# X_train shape: (1080, 64, 64, 3)
 print ("Y_train shape: " + str(Y_train.shape))
-# Y_train shape: (1080, 6)
 print ("X_test shape: " + str(X_test.shape))
-# X_test shape: (120, 64, 64, 3)
 print ("Y_test shape: " + str(Y_test.shape))
-# Y_test shape: (120, 6)
 conv_layers = {}
 
 
@@ -110,7 +94,7 @@ conv_layers = {}
 # 
 # **Exercise**: Implement the function below to create placeholders for the input image X and the output Y. You should not define the number of training examples for the moment. To do so, you could use "None" as the batch size, it will give you the flexibility to choose it later. Hence X should be of dimension **[None, n_H0, n_W0, n_C0]** and Y should be of dimension **[None, n_y]**.  [Hint](https://www.tensorflow.org/api_docs/python/tf/placeholder).
 
-# In[ ]:
+# In[17]:
 
 # GRADED FUNCTION: create_placeholders
 
@@ -130,8 +114,8 @@ def create_placeholders(n_H0, n_W0, n_C0, n_y):
     """
 
     ### START CODE HERE ### (≈2 lines)
-    X = None
-    Y = None
+    X = tf.placeholder(tf.float32, shape=[None, n_H0, n_W0, n_C0])
+    Y = tf.placeholder(tf.float32, shape=[None, n_y])
     ### END CODE HERE ###
     
     return X, Y
@@ -139,9 +123,29 @@ def create_placeholders(n_H0, n_W0, n_C0, n_y):
 
 # In[ ]:
 
+
+
+
+# In[18]:
+
 X, Y = create_placeholders(64, 64, 3, 6)
 print ("X = " + str(X))
 print ("Y = " + str(Y))
+
+
+# In[ ]:
+
+
+
+
+# In[ ]:
+
+
+
+
+# In[ ]:
+
+
 
 
 # **Expected Output**
@@ -171,7 +175,7 @@ print ("Y = " + str(Y))
 # ```
 # [More Info](https://www.tensorflow.org/api_docs/python/tf/get_variable).
 
-# In[ ]:
+# In[4]:
 
 # GRADED FUNCTION: initialize_parameters
 
@@ -187,8 +191,8 @@ def initialize_parameters():
     tf.set_random_seed(1)                              # so that your "random" numbers match ours
         
     ### START CODE HERE ### (approx. 2 lines of code)
-    W1 = None
-    W2 = None
+    W1 = tf.get_variable("W1",  [4, 4, 3, 8], initializer = tf.contrib.layers.xavier_initializer(seed = 0))
+    W2 = tf.get_variable("W2",  [2, 2, 8, 16], initializer = tf.contrib.layers.xavier_initializer(seed = 0))
     ### END CODE HERE ###
 
     parameters = {"W1": W1,
@@ -197,7 +201,7 @@ def initialize_parameters():
     return parameters
 
 
-# In[ ]:
+# In[16]:
 
 tf.reset_default_graph()
 with tf.Session() as sess_test:
@@ -206,6 +210,21 @@ with tf.Session() as sess_test:
     sess_test.run(init)
     print("W1 = " + str(parameters["W1"].eval()[1,1,1]))
     print("W2 = " + str(parameters["W2"].eval()[1,1,1]))
+
+
+# In[ ]:
+
+
+
+
+# In[ ]:
+
+
+
+
+# In[ ]:
+
+
 
 
 # ** Expected Output:**
@@ -266,7 +285,7 @@ with tf.Session() as sess_test:
 #      - Flatten the previous output.
 #      - FULLYCONNECTED (FC) layer: Apply a fully connected layer without an non-linear activation function. Do not call the softmax here. This will result in 6 neurons in the output layer, which then get passed later to a softmax. In TensorFlow, the softmax and cost function are lumped together into a single function, which you'll call in a different function when computing the cost. 
 
-# In[ ]:
+# In[5]:
 
 # GRADED FUNCTION: forward_propagation
 
@@ -290,28 +309,48 @@ def forward_propagation(X, parameters):
     
     ### START CODE HERE ###
     # CONV2D: stride of 1, padding 'SAME'
-    Z1 = None
+    Z1 = tf.nn.conv2d(X,W1, strides = [1,1,1,1], padding = 'SAME')
     # RELU
-    A1 = None
+    A1 = tf.nn.relu(Z1)
     # MAXPOOL: window 8x8, sride 8, padding 'SAME'
-    P1 = None
+    P1 = tf.nn.max_pool(A1, ksize = [1,8,8,1], strides = [1,8,8,1], padding = 'SAME')
     # CONV2D: filters W2, stride 1, padding 'SAME'
-    Z2 = None
+    Z2 = tf.nn.conv2d(P1,W2, strides = [1,1,1,1], padding = 'SAME')
     # RELU
-    A2 = None
+    A2 = tf.nn.relu(Z2)
     # MAXPOOL: window 4x4, stride 4, padding 'SAME'
-    P2 = None
+    P2 = tf.nn.max_pool(A2, ksize = [1,4,4,1], strides = [1,4,4,1], padding = 'SAME')
     # FLATTEN
-    P2 = None
+    P2 = tf.contrib.layers.flatten(P2)
     # FULLY-CONNECTED without non-linear activation function (not not call softmax).
     # 6 neurons in output layer. Hint: one of the arguments should be "activation_fn=None" 
-    Z3 = None
+    Z3 = tf.contrib.layers.fully_connected(P2, 6, activation_fn=None)
     ### END CODE HERE ###
 
     return Z3
 
 
 # In[ ]:
+
+
+
+
+# In[ ]:
+
+
+
+
+# In[ ]:
+
+
+
+
+# In[ ]:
+
+
+
+
+# In[16]:
 
 tf.reset_default_graph()
 
@@ -324,6 +363,21 @@ with tf.Session() as sess:
     sess.run(init)
     a = sess.run(Z3, {X: np.random.randn(2,64,64,3), Y: np.random.randn(2,6)})
     print("Z3 = " + str(a))
+
+
+# In[ ]:
+
+
+
+
+# In[ ]:
+
+
+
+
+# In[ ]:
+
+
 
 
 # **Expected Output**:
@@ -347,7 +401,7 @@ with tf.Session() as sess:
 # 
 # ** Exercise**: Compute the cost below using the function above.
 
-# In[ ]:
+# In[6]:
 
 # GRADED FUNCTION: compute_cost 
 
@@ -364,13 +418,28 @@ def compute_cost(Z3, Y):
     """
     
     ### START CODE HERE ### (1 line of code)
-    cost = None
+    cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits = Z3, labels = Y))
     ### END CODE HERE ###
     
     return cost
 
 
 # In[ ]:
+
+
+
+
+# In[ ]:
+
+
+
+
+# In[ ]:
+
+
+
+
+# In[15]:
 
 tf.reset_default_graph()
 
@@ -384,6 +453,21 @@ with tf.Session() as sess:
     sess.run(init)
     a = sess.run(cost, {X: np.random.randn(4,64,64,3), Y: np.random.randn(4,6)})
     print("cost = " + str(a))
+
+
+# In[ ]:
+
+
+
+
+# In[ ]:
+
+
+
+
+# In[ ]:
+
+
 
 
 # **Expected Output**: 
@@ -416,7 +500,7 @@ with tf.Session() as sess:
 # 
 # Finally you will create a session and run a for loop  for num_epochs, get the mini-batches, and then for each mini-batch you will optimize the function. [Hint for initializing the variables](https://www.tensorflow.org/api_docs/python/tf/global_variables_initializer)
 
-# In[ ]:
+# In[7]:
 
 # GRADED FUNCTION: model
 
@@ -451,27 +535,27 @@ def model(X_train, Y_train, X_test, Y_test, learning_rate = 0.009,
     
     # Create Placeholders of the correct shape
     ### START CODE HERE ### (1 line)
-    X, Y = None
+    X, Y = create_placeholders(n_H0, n_W0, n_C0, n_y)
     ### END CODE HERE ###
 
     # Initialize parameters
     ### START CODE HERE ### (1 line)
-    parameters = None
+    parameters = initialize_parameters()
     ### END CODE HERE ###
     
     # Forward propagation: Build the forward propagation in the tensorflow graph
     ### START CODE HERE ### (1 line)
-    Z3 = None
+    Z3 = forward_propagation(X, parameters)
     ### END CODE HERE ###
     
     # Cost function: Add cost function to tensorflow graph
     ### START CODE HERE ### (1 line)
-    cost = None
+    cost = compute_cost(Z3, Y)
     ### END CODE HERE ###
     
     # Backpropagation: Define the tensorflow optimizer. Use an AdamOptimizer that minimizes the cost.
     ### START CODE HERE ### (1 line)
-    optimizer = None
+    optimizer =  tf.train.AdamOptimizer(learning_rate = learning_rate).minimize(cost)
     ### END CODE HERE ###
     
     # Initialize all the variables globally
@@ -498,7 +582,7 @@ def model(X_train, Y_train, X_test, Y_test, learning_rate = 0.009,
                 # IMPORTANT: The line that runs the graph on a minibatch.
                 # Run the session to execute the optimizer and the cost, the feedict should contain a minibatch for (X,Y).
                 ### START CODE HERE ### (1 line)
-                _ , temp_cost = sess.run([optimizer, cost], feed_dict={X: minibatch_X, Y: minibatch_Y})
+                _ , temp_cost =  sess.run([optimizer, cost], feed_dict={X: minibatch_X, Y: minibatch_Y})
                 ### END CODE HERE ###
                 
                 minibatch_cost += temp_cost / num_minibatches
@@ -533,11 +617,31 @@ def model(X_train, Y_train, X_test, Y_test, learning_rate = 0.009,
         return train_accuracy, test_accuracy, parameters
 
 
+# In[ ]:
+
+
+
+
 # Run the following cell to train your model for 100 epochs. Check if your cost after epoch 0 and 5 matches our output. If not, stop the cell and go back to your code!
+
+# In[14]:
+
+_, _, parameters = model(X_train, Y_train, X_test, Y_test)
+
 
 # In[ ]:
 
-_, _, parameters = model(X_train, Y_train, X_test, Y_test)
+
+
+
+# In[ ]:
+
+
+
+
+# In[ ]:
+
+
 
 
 # **Expected output**: although it may not match perfectly, your expected output should be close to ours and your cost value should decrease.
