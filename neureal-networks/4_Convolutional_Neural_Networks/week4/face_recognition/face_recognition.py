@@ -49,9 +49,9 @@ import tensorflow as tf
 from fr_utils import *
 from inception_blocks_v2 import *
 
-get_ipython().magic('matplotlib inline')
-get_ipython().magic('load_ext autoreload')
-get_ipython().magic('autoreload 2')
+# get_ipython().magic('matplotlib inline')
+# get_ipython().magic('load_ext autoreload')
+# get_ipython().magic('autoreload 2')
 
 np.set_printoptions(threshold=np.nan)
 
@@ -88,7 +88,7 @@ FRmodel = faceRecoModel(input_shape=(3, 96, 96))
 
 # In[ ]:
 
-print("Total Params:", FRmodel.count_params())
+print("Total Params:", FRmodel.count_params()) #3743280
 
 
 # ** Expected Output **
@@ -184,13 +184,13 @@ def triplet_loss(y_true, y_pred, alpha = 0.2):
     
     ### START CODE HERE ### (≈ 4 lines)
     # Step 1: Compute the (encoding) distance between the anchor and the positive, you will need to sum over axis=-1
-    pos_dist = None
+    pos_dist = tf.reduce_sum(tf.square(tf.subtract(anchor, positive)), axis=-1)
     # Step 2: Compute the (encoding) distance between the anchor and the negative, you will need to sum over axis=-1
-    neg_dist = None
+    neg_dist = tf.reduce_sum(tf.square(tf.subtract(anchor, negative)), axis=-1)
     # Step 3: subtract the two previous distances and add alpha.
-    basic_loss = None
+    basic_loss = tf.add(tf.subtract(pos_dist, neg_dist), alpha) 
     # Step 4: Take the maximum of basic_loss and 0.0. Sum over the training examples.
-    loss = None
+    loss = tf.reduce_sum(tf.maximum(0.0, basic_loss))
     ### END CODE HERE ###
     
     return loss
@@ -303,18 +303,18 @@ def verify(image_path, identity, database, model):
     ### START CODE HERE ###
     
     # Step 1: Compute the encoding for the image. Use img_to_encoding() see example above. (≈ 1 line)
-    encoding = None
+    encoding = img_to_encoding(image_path, model)
     
     # Step 2: Compute distance with identity's image (≈ 1 line)
-    dist = None
+    dist = np.linalg.norm(encoding - database[identity])
     
     # Step 3: Open the door if dist < 0.7, else don't open (≈ 3 lines)
-    if None:
+    if dist < 0.7:
         print("It's " + str(identity) + ", welcome home!")
-        door_open = None
+        door_open = True
     else:
         print("It's not " + str(identity) + ", please go away")
-        door_open = None
+        door_open = False
         
     ### END CODE HERE ###
         
@@ -403,23 +403,23 @@ def who_is_it(image_path, database, model):
     ### START CODE HERE ### 
     
     ## Step 1: Compute the target "encoding" for the image. Use img_to_encoding() see example above. ## (≈ 1 line)
-    encoding = None
+    encoding = img_to_encoding(image_path, model)
     
     ## Step 2: Find the closest encoding ##
     
     # Initialize "min_dist" to a large value, say 100 (≈1 line)
-    min_dist = None
+    min_dist = 100.0
     
     # Loop over the database dictionary's names and encodings.
-    for (name, db_enc) in None:
+    for (name, db_enc) in database.items():
         
         # Compute L2 distance between the target "encoding" and the current "emb" from the database. (≈ 1 line)
-        dist = None
+        dist = np.linalg.norm(encoding - db_enc)
 
         # If this distance is less than the min_dist, then set min_dist to dist, and identity to name. (≈ 3 lines)
-        if None:
-            min_dist = None
-            identity = None
+        if dist < min_dist:
+            min_dist = dist
+            identity = name
 
     ### END CODE HERE ###
     
