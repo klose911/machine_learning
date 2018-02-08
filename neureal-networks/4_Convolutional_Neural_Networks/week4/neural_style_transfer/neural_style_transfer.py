@@ -11,7 +11,7 @@
 # 
 # Most of the algorithms you've studied optimize a cost function to get a set of parameter values. In Neural Style Transfer, you'll optimize a cost function to get pixel values!
 
-# In[ ]:
+# In[1]:
 
 import os
 import sys
@@ -24,7 +24,17 @@ from nst_utils import *
 import numpy as np
 import tensorflow as tf
 
-get_ipython().magic('matplotlib inline')
+#get_ipython().magic('matplotlib inline')
+
+
+# In[ ]:
+
+
+
+
+# In[ ]:
+
+
 
 
 # ## 1 - Problem Statement
@@ -44,10 +54,20 @@ get_ipython().magic('matplotlib inline')
 # 
 # Run the following code to load parameters from the VGG model. This may take a few seconds. 
 
-# In[ ]:
+# In[2]:
 
 model = load_vgg_model("pretrained-model/imagenet-vgg-verydeep-19.mat")
 print(model)
+
+
+# In[ ]:
+
+
+
+
+# In[ ]:
+
+
 
 
 # The model is stored in a python dictionary where each variable name is the key and the corresponding value is a tensor containing that variable's value. To run an image through this network, you just have to feed the image to the model. In TensorFlow, you can do so using the [tf.assign](https://www.tensorflow.org/api_docs/python/tf/assign) function. In particular, you will use the assign function like this:  
@@ -71,10 +91,20 @@ print(model)
 # 
 # In our running example, the content image C will be the picture of the Louvre Museum in Paris. Run the code below to see a picture of the Louvre.
 
-# In[ ]:
+# In[3]:
 
 content_image = scipy.misc.imread("images/louvre.jpg")
 imshow(content_image)
+
+
+# In[ ]:
+
+
+
+
+# In[ ]:
+
+
 
 
 # The content image (C) shows the Louvre museum's pyramid surrounded by old Paris buildings, against a sunny sky with a few clouds.
@@ -103,7 +133,7 @@ imshow(content_image)
 # 3. Compute the content cost:
 #     - If you are stuck, take a look at [Hint3](https://www.tensorflow.org/api_docs/python/tf/reduce_sum), [Hint4](https://www.tensorflow.org/api_docs/python/tf/square) and [Hint5](https://www.tensorflow.org/api_docs/python/tf/subtract).
 
-# In[ ]:
+# In[4]:
 
 # GRADED FUNCTION: compute_content_cost
 
@@ -121,20 +151,25 @@ def compute_content_cost(a_C, a_G):
     
     ### START CODE HERE ###
     # Retrieve dimensions from a_G (≈1 line)
-    m, n_H, n_W, n_C = None
+    m, n_H, n_W, n_C = a_G.get_shape().as_list()
     
     # Reshape a_C and a_G (≈2 lines)
-    a_C_unrolled = None
-    a_G_unrolled = None
+    a_C_unrolled = tf.transpose(tf.reshape(a_C, [n_H*n_W,n_C]))
+    a_G_unrolled = tf.transpose(tf.reshape(a_G, [n_H*n_W,n_C]))
     
     # compute the cost with tensorflow (≈1 line)
-    J_content = None
+    J_content = tf.reduce_sum(tf.square(tf.subtract(a_C_unrolled, a_G_unrolled))) / (4 * n_H * n_W * n_C)
     ### END CODE HERE ###
     
     return J_content
 
 
 # In[ ]:
+
+
+
+
+# In[5]:
 
 tf.reset_default_graph()
 
@@ -144,6 +179,11 @@ with tf.Session() as test:
     a_G = tf.random_normal([1, 4, 4, 3], mean=1, stddev=4)
     J_content = compute_content_cost(a_C, a_G)
     print("J_content = " + str(J_content.eval()))
+
+
+# In[ ]:
+
+
 
 
 # **Expected Output**:
@@ -169,10 +209,20 @@ with tf.Session() as test:
 # 
 # For our running example, we will use the following style image: 
 
-# In[ ]:
+# In[6]:
 
 style_image = scipy.misc.imread("images/monet_800600.jpg")
 imshow(style_image)
+
+
+# In[ ]:
+
+
+
+
+# In[ ]:
+
+
 
 
 # This painting was painted in the style of *[impressionism](https://en.wikipedia.org/wiki/Impressionism)*.
@@ -198,7 +248,7 @@ imshow(style_image)
 # **Exercise**:
 # Using TensorFlow, implement a function that computes the Gram matrix of a matrix A. The formula is: The gram matrix of A is $G_A = AA^T$. If you are stuck, take a look at [Hint 1](https://www.tensorflow.org/api_docs/python/tf/matmul) and [Hint 2](https://www.tensorflow.org/api_docs/python/tf/transpose).
 
-# In[ ]:
+# In[7]:
 
 # GRADED FUNCTION: gram_matrix
 
@@ -212,13 +262,23 @@ def gram_matrix(A):
     """
     
     ### START CODE HERE ### (≈1 line)
-    GA = None
+    GA = tf.matmul(A, tf.transpose(A))
     ### END CODE HERE ###
     
     return GA
 
 
 # In[ ]:
+
+
+
+
+# In[ ]:
+
+
+
+
+# In[8]:
 
 tf.reset_default_graph()
 
@@ -228,6 +288,11 @@ with tf.Session() as test:
     GA = gram_matrix(A)
     
     print("GA = " + str(GA.eval()))
+
+
+# In[ ]:
+
+
 
 
 # **Expected Output**:
@@ -266,7 +331,7 @@ with tf.Session() as test:
 # 4. Compute the Style cost:
 #     - You may find [Hint3](https://www.tensorflow.org/api_docs/python/tf/reduce_sum), [Hint4](https://www.tensorflow.org/api_docs/python/tf/square) and [Hint5](https://www.tensorflow.org/api_docs/python/tf/subtract) useful.
 
-# In[ ]:
+# In[9]:
 
 # GRADED FUNCTION: compute_layer_style_cost
 
@@ -282,18 +347,18 @@ def compute_layer_style_cost(a_S, a_G):
     
     ### START CODE HERE ###
     # Retrieve dimensions from a_G (≈1 line)
-    m, n_H, n_W, n_C = None
+    m, n_H, n_W, n_C = a_G.get_shape().as_list()
     
     # Reshape the images to have them of shape (n_C, n_H*n_W) (≈2 lines)
-    a_S = None
-    a_G = None
+    a_S = tf.transpose(tf.reshape(a_S, [n_H*n_W,n_C]))
+    a_G = tf.transpose(tf.reshape(a_G, [n_H*n_W,n_C]))
 
     # Computing gram_matrices for both images S and G (≈2 lines)
-    GS = None
-    GG = None
+    GS = gram_matrix(a_S)
+    GG = gram_matrix(a_G)
 
     # Computing the loss (≈1 line)
-    J_style_layer = None
+    J_style_layer =  tf.reduce_sum(tf.square(tf.subtract(GS, GG))) / (4 * n_C * n_C * n_H * n_H * n_W * n_W) 
     
     ### END CODE HERE ###
     
@@ -301,6 +366,16 @@ def compute_layer_style_cost(a_S, a_G):
 
 
 # In[ ]:
+
+
+
+
+# In[ ]:
+
+
+
+
+# In[10]:
 
 tf.reset_default_graph()
 
@@ -311,6 +386,16 @@ with tf.Session() as test:
     J_style_layer = compute_layer_style_cost(a_S, a_G)
     
     print("J_style_layer = " + str(J_style_layer.eval()))
+
+
+# In[ ]:
+
+
+
+
+# In[ ]:
+
+
 
 
 # **Expected Output**:
@@ -331,7 +416,7 @@ with tf.Session() as test:
 # 
 # So far you have captured the style from only one layer. We'll get better results if we "merge" style costs from several different layers. After completing this exercise, feel free to come back and experiment with different weights to see how it changes the generated image $G$. But for now, this is a pretty reasonable default: 
 
-# In[ ]:
+# In[11]:
 
 STYLE_LAYERS = [
     ('conv1_1', 0.2),
@@ -339,6 +424,16 @@ STYLE_LAYERS = [
     ('conv3_1', 0.2),
     ('conv4_1', 0.2),
     ('conv5_1', 0.2)]
+
+
+# In[ ]:
+
+
+
+
+# In[ ]:
+
+
 
 
 # You can combine the style costs for different layers as follows:
@@ -361,7 +456,7 @@ STYLE_LAYERS = [
 # !--> 
 # 
 
-# In[ ]:
+# In[12]:
 
 def compute_style_cost(model, STYLE_LAYERS):
     """
@@ -402,6 +497,16 @@ def compute_style_cost(model, STYLE_LAYERS):
     return J_style
 
 
+# In[ ]:
+
+
+
+
+# In[ ]:
+
+
+
+
 # **Note**: In the inner-loop of the for-loop above, `a_G` is a tensor and hasn't been evaluated yet. It will be evaluated and updated at each iteration when we run the TensorFlow graph in model_nn() below.
 # 
 # <!-- 
@@ -425,7 +530,7 @@ def compute_style_cost(model, STYLE_LAYERS):
 # 
 # **Exercise**: Implement the total cost function which includes both the content cost and the style cost. 
 
-# In[ ]:
+# In[13]:
 
 # GRADED FUNCTION: total_cost
 
@@ -444,13 +549,23 @@ def total_cost(J_content, J_style, alpha = 10, beta = 40):
     """
     
     ### START CODE HERE ### (≈1 line)
-    J = None
+    J = alpha * J_content + beta * J_style
     ### END CODE HERE ###
     
     return J
 
 
 # In[ ]:
+
+
+
+
+# In[ ]:
+
+
+
+
+# In[14]:
 
 tf.reset_default_graph()
 
@@ -460,6 +575,16 @@ with tf.Session() as test:
     J_style = np.random.randn()
     J = total_cost(J_content, J_style)
     print("J = " + str(J))
+
+
+# In[ ]:
+
+
+
+
+# In[ ]:
+
+
 
 
 # **Expected Output**:
@@ -508,7 +633,7 @@ with tf.Session() as test:
 # 
 # Lets start the interactive session.
 
-# In[ ]:
+# In[15]:
 
 # Reset the graph
 tf.reset_default_graph()
@@ -517,35 +642,85 @@ tf.reset_default_graph()
 sess = tf.InteractiveSession()
 
 
-# Let's load, reshape, and normalize our "content" image (the Louvre museum picture):
+# In[ ]:
+
+
+
 
 # In[ ]:
+
+
+
+
+# Let's load, reshape, and normalize our "content" image (the Louvre museum picture):
+
+# In[16]:
 
 content_image = scipy.misc.imread("images/louvre_small.jpg")
 content_image = reshape_and_normalize_image(content_image)
 
 
-# Let's load, reshape and normalize our "style" image (Claude Monet's painting):
+# In[ ]:
+
+
+
 
 # In[ ]:
+
+
+
+
+# Let's load, reshape and normalize our "style" image (Claude Monet's painting):
+
+# In[17]:
 
 style_image = scipy.misc.imread("images/monet.jpg")
 style_image = reshape_and_normalize_image(style_image)
 
 
-# Now, we initialize the "generated" image as a noisy image created from the content_image. By initializing the pixels of the generated image to be mostly noise but still slightly correlated with the content image, this will help the content of the "generated" image more rapidly match the content of the "content" image. (Feel free to look in `nst_utils.py` to see the details of `generate_noise_image(...)`; to do so, click "File-->Open..." at the upper-left corner of this Jupyter notebook.)
+# In[ ]:
+
+
+
 
 # In[ ]:
+
+
+
+
+# Now, we initialize the "generated" image as a noisy image created from the content_image. By initializing the pixels of the generated image to be mostly noise but still slightly correlated with the content image, this will help the content of the "generated" image more rapidly match the content of the "content" image. (Feel free to look in `nst_utils.py` to see the details of `generate_noise_image(...)`; to do so, click "File-->Open..." at the upper-left corner of this Jupyter notebook.)
+
+# In[18]:
 
 generated_image = generate_noise_image(content_image)
 imshow(generated_image[0])
 
 
-# Next, as explained in part (2), let's load the VGG16 model.
+# In[ ]:
+
+
+
 
 # In[ ]:
 
+
+
+
+# Next, as explained in part (2), let's load the VGG16 model.
+
+# In[19]:
+
 model = load_vgg_model("pretrained-model/imagenet-vgg-verydeep-19.mat")
+
+
+# In[ ]:
+
+
+
+
+# In[ ]:
+
+
 
 
 # To get the program to compute the content cost, we will now assign `a_C` and `a_G` to be the appropriate hidden layer activations. We will use layer `conv4_2` to compute the content cost. The code below does the following:
@@ -555,7 +730,7 @@ model = load_vgg_model("pretrained-model/imagenet-vgg-verydeep-19.mat")
 # 3. Set a_G to be the tensor giving the hidden layer activation for the same layer. 
 # 4. Compute the content cost using a_C and a_G.
 
-# In[ ]:
+# In[20]:
 
 # Assign the content image to be the input of the VGG model.  
 sess.run(model['input'].assign(content_image))
@@ -575,9 +750,19 @@ a_G = out
 J_content = compute_content_cost(a_C, a_G)
 
 
-# **Note**: At this point, a_G is a tensor and hasn't been evaluated. It will be evaluated and updated at each iteration when we run the Tensorflow graph in model_nn() below.
+# In[ ]:
+
+
+
 
 # In[ ]:
+
+
+
+
+# **Note**: At this point, a_G is a tensor and hasn't been evaluated. It will be evaluated and updated at each iteration when we run the Tensorflow graph in model_nn() below.
+
+# In[21]:
 
 # Assign the input of the model to be the "style" image 
 sess.run(model['input'].assign(style_image))
@@ -586,18 +771,48 @@ sess.run(model['input'].assign(style_image))
 J_style = compute_style_cost(model, STYLE_LAYERS)
 
 
+# In[ ]:
+
+
+
+
+# In[ ]:
+
+
+
+
+# In[ ]:
+
+
+
+
 # **Exercise**: Now that you have J_content and J_style, compute the total cost J by calling `total_cost()`. Use `alpha = 10` and `beta = 40`.
 
 # In[ ]:
 
+
+
+
+# In[22]:
+
 ### START CODE HERE ### (1 line)
-J = None
+J = total_cost(J_content, J_style, alpha = 10, beta = 40)
 ### END CODE HERE ###
+
+
+# In[ ]:
+
+
+
+
+# In[ ]:
+
+
 
 
 # You'd previously learned how to set up the Adam optimizer in TensorFlow. Lets do that here, using a learning rate of 2.0.  [See reference](https://www.tensorflow.org/api_docs/python/tf/train/AdamOptimizer)
 
-# In[ ]:
+# In[23]:
 
 # define optimizer (1 line)
 optimizer = tf.train.AdamOptimizer(2.0)
@@ -606,32 +821,47 @@ optimizer = tf.train.AdamOptimizer(2.0)
 train_step = optimizer.minimize(J)
 
 
+# In[ ]:
+
+
+
+
+# In[ ]:
+
+
+
+
 # **Exercise**: Implement the model_nn() function which initializes the variables of the tensorflow graph, assigns the input image (initial generated image) as the input of the VGG16 model and runs the train_step for a large number of steps.
 
 # In[ ]:
+
+
+
+
+# In[24]:
 
 def model_nn(sess, input_image, num_iterations = 200):
     
     # Initialize global variables (you need to run the session on the initializer)
     ### START CODE HERE ### (1 line)
-    None
+    sess.run(tf.global_variables_initializer())
     ### END CODE HERE ###
     
     # Run the noisy input image (initial generated image) through the model. Use assign().
     ### START CODE HERE ### (1 line)
-    None
+    sess.run(model['input'].assign(input_image))
     ### END CODE HERE ###
     
     for i in range(num_iterations):
     
         # Run the session on the train_step to minimize the total cost
         ### START CODE HERE ### (1 line)
-        None
+        sess.run(train_step)
         ### END CODE HERE ###
         
         # Compute the generated image by running the session on the current model['input']
         ### START CODE HERE ### (1 line)
-        generated_image = None
+        generated_image = sess.run(model['input'])
         ### END CODE HERE ###
 
         # Print every 20 iteration.
@@ -651,11 +881,31 @@ def model_nn(sess, input_image, num_iterations = 200):
     return generated_image
 
 
+# In[ ]:
+
+
+
+
+# In[ ]:
+
+
+
+
 # Run the following cell to generate an artistic image. It should take about 3min on CPU for every 20 iterations but you start observing attractive results after ≈140 iterations. Neural Style Transfer is generally trained using GPUs.
 
 # In[ ]:
 
 model_nn(sess, generated_image)
+
+
+# In[ ]:
+
+
+
+
+# In[ ]:
+
+
 
 
 # **Expected Output**:
