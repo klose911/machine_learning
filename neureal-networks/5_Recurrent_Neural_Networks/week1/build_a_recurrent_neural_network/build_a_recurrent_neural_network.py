@@ -94,9 +94,9 @@ def rnn_cell_forward(xt, a_prev, parameters):
     
     ### START CODE HERE ### (≈2 lines)
     # compute next activation state using the formula given above
-    a_next = None
+    a_next = np.tanh(np.dot(Wax, xt) + np.dot(Waa, a_prev) + ba)
     # compute output of the current cell using the formula given above
-    yt_pred = None   
+    yt_pred = softmax(np.dot(Wya, a_next) + by)   
     ### END CODE HERE ###
     
     # store values you need for backward propagation in cache
@@ -220,22 +220,22 @@ def rnn_forward(x, a0, parameters):
     ### START CODE HERE ###
     
     # initialize "a" and "y" with zeros (≈2 lines)
-    a = None
-    y_pred = None
+    a = np.zeros((n_a, m, T_x))
+    y_pred = np.zeros((n_y, m, T_x)) 
     
     # Initialize a_next (≈1 line)
-    a_next = None
+    a_next = a0
     
     # loop over all time-steps
-    for t in range(None):
+    for t in range(T_x):
         # Update next hidden state, compute the prediction, get the cache (≈1 line)
-        a_next, yt_pred, cache = None
+        a_next, yt_pred, cache = rnn_cell_forward(x[:,:,t], a_next, parameters)
         # Save the value of the new "next" hidden state in a (≈1 line)
-        a[:,:,t] = None
+        a[:,:,t] = a_next
         # Save the value of the prediction in y (≈1 line)
-        y_pred[:,:,t] = None
+        y_pred[:,:,t] = yt_pred
         # Append "cache" to "caches" (≈1 line)
-        None
+        caches.append(cache) 
         
     ### END CODE HERE ###
     
@@ -432,20 +432,20 @@ def lstm_cell_forward(xt, a_prev, c_prev, parameters):
 
     ### START CODE HERE ###
     # Concatenate a_prev and xt (≈3 lines)
-    concat = None
-    concat[: n_a, :] = None
-    concat[n_a :, :] = None
+    concat = np.zeros((n_x + n_a, m))
+    concat[: n_a, :] = a_prev
+    concat[n_a :, :] = xt
 
     # Compute values for ft, it, cct, c_next, ot, a_next using the formulas given figure (4) (≈6 lines)
-    ft = None
-    it = None
-    cct = None
-    c_next = None
-    ot = None
-    a_next = None
+    ft = sigmoid(np.dot(Wf, concat) + bf)
+    it = sigmoid(np.dot(Wi, concat) + bi) 
+    cct = np.tanh(np.dot(Wc, concat) + bc) 
+    c_next = np.multiply(ft, c_prev) + np.multiply(it, cct)
+    ot = sigmoid(np.dot(Wo, concat) + bo) 
+    a_next = np.multiply(ot, np.tanh(c_next)) 
     
     # Compute prediction of the LSTM cell (≈1 line)
-    yt_pred = None
+    yt_pred = softmax(np.dot(Wy, a_next) + by) 
     ### END CODE HERE ###
 
     # store values needed for backward propagation in cache
@@ -603,30 +603,30 @@ def lstm_forward(x, a0, parameters):
     
     ### START CODE HERE ###
     # Retrieve dimensions from shapes of x and parameters['Wy'] (≈2 lines)
-    n_x, m, T_x = None
-    n_y, n_a = None
+    n_x, m, T_x = x.shape
+    n_y, n_a =  parameters['Wy'].shape
     
     # initialize "a", "c" and "y" with zeros (≈3 lines)
-    a = None
-    c = None
-    y = None
+    a = np.zeros((n_a, m, T_x))
+    c = np.zeros((n_a, m, T_x))
+    y = np.zeros((n_y, m, T_x))
     
     # Initialize a_next and c_next (≈2 lines)
-    a_next = None
-    c_next = None
+    a_next = a0
+    c_next = np.zeros(a0.shape)
     
     # loop over all time-steps
-    for t in range(None):
+    for t in range(T_x):
         # Update next hidden state, next memory state, compute the prediction, get the cache (≈1 line)
-        a_next, c_next, yt, cache = None
+        a_next, c_next, yt, cache = lstm_cell_forward(x[:,:,t], a_next, c_next, parameters)
         # Save the value of the new "next" hidden state in a (≈1 line)
-        a[:,:,t] = None
+        a[:,:,t] = a_next
         # Save the value of the prediction in y (≈1 line)
-        y[:,:,t] = None
+        y[:,:,t] = yt
         # Save the value of the next cell state (≈1 line)
-        c[:,:,t]  = None
+        c[:,:,t]  = c_next
         # Append the cache into caches (≈1 line)
-        None
+        caches.append(cache)
         
     ### END CODE HERE ###
     
