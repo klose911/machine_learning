@@ -26,6 +26,7 @@
 
 # In[ ]:
 
+from __future__ import print_function
 import numpy as np
 from utils import *
 import random
@@ -112,7 +113,7 @@ def clip(gradients, maxValue):
     ### START CODE HERE ###
     # clip to mitigate exploding gradients, loop over [dWax, dWaa, dWya, db, dby]. (≈2 lines)
     for gradient in [dWax, dWaa, dWya, db, dby]:
-        None
+        np.clip(gradient, -maxValue, maxValue, out=gradient)
     ### END CODE HERE ###
     
     gradients = {"dWaa": dWaa, "dWax": dWax, "dWya": dWya, "db": db, "dby": dby}
@@ -243,9 +244,9 @@ def sample(parameters, char_to_ix, seed):
     
     ### START CODE HERE ###
     # Step 1: Create the one-hot vector x for the first character (initializing the sequence generation). (≈1 line)
-    x = None
+    x = np.zeros((vocab_size, 1))
     # Step 1': Initialize a_prev as zeros (≈1 line)
-    a_prev = None
+    a_prev = np.zeros((n_a, 1))
     
     # Create an empty list of indices, this is the list which will contain the list of indices of the characters to generate (≈1 line)
     indices = []
@@ -262,25 +263,25 @@ def sample(parameters, char_to_ix, seed):
     while (idx != newline_character and counter != 50):
         
         # Step 2: Forward propagate x using the equations (1), (2) and (3)
-        a = None
-        z = None
-        y = None
+        a = np.tanh(np.dot(Wax, x) + np.dot(Waa, a_prev) + b)
+        z = np.dot(Wya, a) + by
+        y = softmax(z) 
         
         # for grading purposes
         np.random.seed(counter+seed) 
         
         # Step 3: Sample the index of a character within the vocabulary from the probability distribution y
-        idx = None
+        idx = np.random.choice(vocab_size,p = y[:,0])
 
         # Append the index to "indices"
-        None
+        indices.append(idx)
         
         # Step 4: Overwrite the input character as the one corresponding to the sampled index.
-        x = None
-        x[None] = None
+        x =  np.zeros((vocab_size, 1))
+        x[idx] = 1
         
         # Update "a_prev" to be "a"
-        a_prev = None
+        a_prev = a
         
         # for grading purposes
         seed += 1
@@ -405,16 +406,16 @@ def optimize(X, Y, a_prev, parameters, learning_rate = 0.01):
     ### START CODE HERE ###
     
     # Forward propagate through time (≈1 line)
-    loss, cache = None
+    loss, cache = rnn_forward(X, Y, a_prev, parameters) 
     
     # Backpropagate through time (≈1 line)
-    gradients, a = None
+    gradients, a = rnn_backward(X, Y, parameters, cache)
     
     # Clip your gradients between -5 (min) and 5 (max) (≈1 line)
-    gradients = None
+    gradients =  clip(gradients, 5)
     
     # Update parameters (≈1 line)
-    parameters = None
+    parameters = update_parameters(parameters, gradients, learning_rate)
     
     ### END CODE HERE ###
     
@@ -561,13 +562,14 @@ def model(data, ix_to_char, char_to_ix, num_iterations = 35000, n_a = 50, dino_n
         ### START CODE HERE ###
         
         # Use the hint above to define one training example (X,Y) (≈ 2 lines)
-        index = None
-        X = None
-        Y = None
+        index = j % len(examples)
+        X = [None] + [char_to_ix[ch] for ch in examples[index]] 
+        Y = X[1:] + [char_to_ix["\n"]]
+
         
         # Perform one optimization step: Forward-prop -> Backward-prop -> Clip -> Update parameters
         # Choose a learning rate of 0.01
-        curr_loss, gradients, a_prev = None
+        curr_loss, gradients, a_prev =  optimize(X, Y, a_prev, parameters, learning_rate = 0.01)
         
         ### END CODE HERE ###
         
@@ -625,7 +627,6 @@ parameters = model(data, ix_to_char, char_to_ix)
 
 # In[ ]:
 
-from __future__ import print_function
 from keras.callbacks import LambdaCallback
 from keras.models import Model, load_model, Sequential
 from keras.layers import Dense, Activation, Dropout, Input, Masking
