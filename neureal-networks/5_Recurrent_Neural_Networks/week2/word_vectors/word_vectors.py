@@ -71,14 +71,14 @@ def cosine_similarity(u, v):
     
     ### START CODE HERE ###
     # Compute the dot product between u and v (≈1 line)
-    dot = None
+    dot = np.dot(u, v)
     # Compute the L2 norm of u (≈1 line)
-    norm_u = None
+    norm_u = np.linalg.norm(u)
     
     # Compute the L2 norm of v (≈1 line)
-    norm_v = None
+    norm_v = np.linalg.norm(v)
     # Compute the cosine similarity defined by formula (1) (≈1 line)
-    cosine_similarity = None
+    cosine_similarity = dot / (norm_u * norm_v) 
     ### END CODE HERE ###
     
     return cosine_similarity
@@ -160,7 +160,7 @@ def complete_analogy(word_a, word_b, word_c, word_to_vec_map):
     
     ### START CODE HERE ###
     # Get the word embeddings v_a, v_b and v_c (≈1-3 lines)
-    e_a, e_b, e_c = None
+    e_a, e_b, e_c = word_to_vec_map[word_a], word_to_vec_map[word_b], word_to_vec_map[word_c]
     ### END CODE HERE ###
     
     words = word_to_vec_map.keys()
@@ -175,13 +175,13 @@ def complete_analogy(word_a, word_b, word_c, word_to_vec_map):
         
         ### START CODE HERE ###
         # Compute cosine similarity between the vector (e_b - e_a) and the vector ((w's vector representation) - e_c)  (≈1 line)
-        cosine_sim = None
+        cosine_sim = cosine_similarity(e_b - e_a, word_to_vec_map[w] - e_c)
         
         # If the cosine_sim is more than the max_cosine_sim seen so far,
             # then: set the new max_cosine_sim to the current cosine_sim and the best_word to the current word (≈3 lines)
-        if None > None:
-            max_cosine_sim = None
-            best_word = None
+        if cosine_sim > max_cosine_sim:
+            max_cosine_sim = cosine_sim
+            best_word = w
         ### END CODE HERE ###
         
     return best_word
@@ -330,14 +330,14 @@ def neutralize(word, g, word_to_vec_map):
     
     ### START CODE HERE ###
     # Select word vector representation of "word". Use word_to_vec_map. (≈ 1 line)
-    e = None
+    e = word_to_vec_map[word]
     
     # Compute e_biascomponent using the formula give above. (≈ 1 line)
-    e_biascomponent = None
+    e_biascomponent = np.dot(e, g) / np.square(np.linalg.norm(g)) * g
  
     # Neutralize e by substracting e_biascomponent from it 
     # e_debiased should be equal to its orthogonal projection. (≈ 1 line)
-    e_debiased = None
+    e_debiased = e - e_biascomponent 
     ### END CODE HERE ###
     
     return e_debiased
@@ -426,27 +426,27 @@ def equalize(pair, bias_axis, word_to_vec_map):
     
     ### START CODE HERE ###
     # Step 1: Select word vector representation of "word". Use word_to_vec_map. (≈ 2 lines)
-    w1, w2 = None
-    e_w1, e_w2 = None
+    w1, w2 = pair
+    e_w1, e_w2 = word_to_vec_map[w1], word_to_vec_map[w2]
     
     # Step 2: Compute the mean of e_w1 and e_w2 (≈ 1 line)
-    mu = None
+    mu = (e_w1 + e_w2 ) / 2
 
     # Step 3: Compute the projections of mu over the bias axis and the orthogonal axis (≈ 2 lines)
-    mu_B = None
-    mu_orth = None
+    mu_B = np.dot(mu, bias_axis) / np.sum(np.square(bias_axis)) * bias_axis 
+    mu_orth = mu - mu_B
 
     # Step 4: Use equations (7) and (8) to compute e_w1B and e_w2B (≈2 lines)
-    e_w1B = None
-    e_w2B = None
+    e_w1B = np.dot(e_w1, bias_axis) /  np.sum(np.square(bias_axis)) * bias_axis
+    e_w2B = np.dot(e_w2, bias_axis) /  np.sum(np.square(bias_axis)) * bias_axis
         
     # Step 5: Adjust the Bias part of e_w1B and e_w2B using the formulas (9) and (10) given above (≈2 lines)
-    corrected_e_w1B = None
-    corrected_e_w2B = None
+    corrected_e_w1B = np.sqrt(np.abs(1 -  np.sum(np.square(mu_orth)))) * (e_w1B - mu_B) / np.linalg.norm(e_w1 - mu_orth - mu_B) 
+    corrected_e_w2B = np.sqrt(np.abs(1 -  np.sum(np.square(mu_orth)))) * (e_w2B - mu_B) / np.linalg.norm(e_w2 - mu_orth - mu_B)
 
     # Step 6: Debias by equalizing e1 and e2 to the sum of their corrected projections (≈2 lines)
-    e1 = None
-    e2 = None
+    e1 = corrected_e_w1B + mu_orth
+    e2 = corrected_e_w2B + mu_orth
                                                                 
     ### END CODE HERE ###
     
