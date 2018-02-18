@@ -20,7 +20,7 @@ from emo_utils import *
 import emoji
 import matplotlib.pyplot as plt
 
-get_ipython().magic('matplotlib inline')
+#get_ipython().magic('matplotlib inline')
 
 
 # ## 1 - Baseline model: Emojifier-V1
@@ -53,7 +53,7 @@ maxLen = len(max(X_train, key=len).split())
 
 # In[ ]:
 
-index = 1
+index = 127
 print(X_train[index], label_to_emoji(Y_train[index]))
 
 
@@ -134,15 +134,15 @@ def sentence_to_avg(sentence, word_to_vec_map):
     
     ### START CODE HERE ###
     # Step 1: Split sentence into list of lower case words (≈ 1 line)
-    words = None
+    words = sentence.lower().split()
 
     # Initialize the average word vector, should have the same shape as your word vectors.
-    avg = None
+    avg = np.zeros((50,))
     
     # Step 2: average the word vectors. You can loop over the words in the list "words".
-    for w in None:
-        avg += None
-    avg = None
+    for w in words:
+        avg += word_to_vec_map[w]
+    avg = avg / len(words) 
     
     ### END CODE HERE ###
     
@@ -230,14 +230,14 @@ def model(X, Y, word_to_vec_map, learning_rate = 0.01, num_iterations = 400):
             
             ### START CODE HERE ### (≈ 4 lines of code)
             # Average the word vectors of the words from the i'th training example
-            avg = None
+            avg = sentence_to_avg(X[i], word_to_vec_map)
 
             # Forward propagate the avg through the softmax layer
-            z = None
-            a = None
+            z = np.dot(W, avg) + b 
+            a = softmax(z)
 
             # Compute cost using the i'th training label's one hot representation and "A" (the output of the softmax)
-            cost = None
+            cost = -np.sum(Y_oh[i] * np.log(a))
             ### END CODE HERE ###
             
             # Compute gradients 
@@ -485,22 +485,22 @@ def sentences_to_indices(X, word_to_index, max_len):
     
     ### START CODE HERE ###
     # Initialize X_indices as a numpy matrix of zeros and the correct shape (≈ 1 line)
-    X_indices = None
+    X_indices = np.zeros((m, max_len), dtype=int)
     
     for i in range(m):                               # loop over training examples
         
         # Convert the ith training sentence in lower case and split is into words. You should get a list of words.
-        sentence_words =None
+        sentence_words =X[i].lower().split()
         
         # Initialize j to 0
-        j = None
+        j = 0
         
         # Loop over the words of sentence_words
-        for w in None:
+        for w in sentence_words:
             # Set the (i,j)th entry of X_indices to the index of the correct word.
-            X_indices[i, j] = None
+            X_indices[i, j] = word_to_index[w]
             # Increment j to j + 1
-            j = None
+            j = j + 1
             
     ### END CODE HERE ###
     
@@ -569,14 +569,14 @@ def pretrained_embedding_layer(word_to_vec_map, word_to_index):
     
     ### START CODE HERE ###
     # Initialize the embedding matrix as a numpy array of zeros of shape (vocab_len, dimensions of word vectors = emb_dim)
-    emb_matrix = None
+    emb_matrix = np.zeros((vocab_len, emb_dim))
     
     # Set each row "index" of the embedding matrix to be the word vector representation of the "index"th word of the vocabulary
     for word, index in word_to_index.items():
-        emb_matrix[index, :] = None
+        emb_matrix[index, :] = word_to_vec_map[word]
 
     # Define Keras embedding layer with the correct output/input sizes, make it trainable. Use Embedding(...). Make sure to set trainable=False. 
-    embedding_layer = None
+    embedding_layer = Embedding(vocab_len, emb_dim, trainable=False)
     ### END CODE HERE ###
 
     # Build the embedding layer, it is required before setting the weights of the embedding layer. Do not modify the "None".
@@ -636,31 +636,31 @@ def Emojify_V2(input_shape, word_to_vec_map, word_to_index):
     
     ### START CODE HERE ###
     # Define sentence_indices as the input of the graph, it should be of shape input_shape and dtype 'int32' (as it contains indices).
-    sentence_indices = None
+    sentence_indices = Input(shape=input_shape, dtype="int32", name="sentence_indices")
     
     # Create the embedding layer pretrained with GloVe Vectors (≈1 line)
-    embedding_layer = None
+    embedding_layer = pretrained_embedding_layer(word_to_vec_map, word_to_index)
     
     # Propagate sentence_indices through your embedding layer, you get back the embeddings
-    embeddings = None   
+    embeddings = embedding_layer(sentence_indices)    
     
     # Propagate the embeddings through an LSTM layer with 128-dimensional hidden state
     # Be careful, the returned output should be a batch of sequences.
-    X = None
+    X = LSTM(128, return_sequences=True)(embeddings)
     # Add dropout with a probability of 0.5
-    X = None
+    X = Dropout(0.5)(X) 
     # Propagate X trough another LSTM layer with 128-dimensional hidden state
     # Be careful, the returned output should be a single hidden state, not a batch of sequences.
-    X = None
+    X = LSTM(128, return_sequences=False)(X)
     # Add dropout with a probability of 0.5
-    X = None
+    X = Dropout(0.5)(X)
     # Propagate X through a Dense layer with softmax activation to get back a batch of 5-dimensional vectors.
-    X = None
+    X = Dense(5)(X)
     # Add a softmax activation
-    X = None
+    X = Activation('softmax')(X)
     
     # Create Model instance which converts sentence_indices into X.
-    model = None
+    model = Model(inputs = sentence_indices, outputs = X, name='emojifier')
     
     ### END CODE HERE ###
     
