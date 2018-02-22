@@ -27,7 +27,7 @@ from tqdm import tqdm
 from babel.dates import format_date
 from nmt_utils import *
 import matplotlib.pyplot as plt
-get_ipython().magic('matplotlib inline')
+#get_ipython().magic('matplotlib inline')
 
 
 # ## 1 - Translating human readable dates into machine readable dates
@@ -70,10 +70,10 @@ Tx = 30
 Ty = 10
 X, Y, Xoh, Yoh = preprocess_data(dataset, human_vocab, machine_vocab, Tx, Ty)
 
-print("X.shape:", X.shape)
-print("Y.shape:", Y.shape)
-print("Xoh.shape:", Xoh.shape)
-print("Yoh.shape:", Yoh.shape)
+print("X.shape:", X.shape) # (10000, 30) 
+print("Y.shape:", Y.shape) # (10000,10) 
+print("Xoh.shape:", Xoh.shape) # (10000, 30, 37)
+print("Yoh.shape:", Yoh.shape) # (10000, 10, 11) 
 
 
 # You now have:
@@ -88,15 +88,35 @@ print("Yoh.shape:", Yoh.shape)
 # In[ ]:
 
 index = 0
-print("Source date:", dataset[index][0])
-print("Target date:", dataset[index][1])
+print("Source date:", dataset[index][0]) # Source date: 9 may 1998
+print("Target date:", dataset[index][1]) # Target date: 1998-05-09
 print()
 print("Source after preprocessing (indices):", X[index])
+# Source after preprocessing (indices): [12  0 24 13 34  0  4 12 12 11 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36]
 print("Target after preprocessing (indices):", Y[index])
+# Target after preprocessing (indices): [ 2 10 10  9  0  1  6  0  1 10]
 print()
 print("Source after preprocessing (one-hot):", Xoh[index])
+ # Source after preprocessing (one-hot):
+ #[[0. 0. 0. ... 0. 0. 0.]
+ # [1. 0. 0. ... 0. 0. 0.]
+ # [0. 0. 0. ... 0. 0. 0.]
+ # ...
+ # [0. 0. 0. ... 0. 0. 1.]
+ # [0. 0. 0. ... 0. 0. 1.]
+ # [0. 0. 0. ... 0. 0. 1.]]
 print("Target after preprocessing (one-hot):", Yoh[index])
-
+# Target after preprocessing (one-hot):
+# [[0. 0. 1. 0. 0. 0. 0. 0. 0. 0. 0.]
+#  [0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 1.]
+#  [0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 1.]
+#  [0. 0. 0. 0. 0. 0. 0. 0. 0. 1. 0.]
+#  [1. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]
+#  [0. 1. 0. 0. 0. 0. 0. 0. 0. 0. 0.]
+#  [0. 0. 0. 0. 0. 0. 1. 0. 0. 0. 0.]
+#  [1. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]
+#  [0. 1. 0. 0. 0. 0. 0. 0. 0. 0. 0.]
+#  [0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 1.]]
 
 # ## 2 - Neural machine translation with attention
 # 
@@ -180,17 +200,17 @@ def one_step_attention(a, s_prev):
     
     ### START CODE HERE ###
     # Use repeator to repeat s_prev to be of shape (m, Tx, n_s) so that you can concatenate it with all hidden states "a" (≈ 1 line)
-    s_prev = None
+    s_prev = repeator(s_prev)
     # Use concatenator to concatenate a and s_prev on the last axis (≈ 1 line)
-    concat = None
+    concat = concatenator([s_prev, a])
     # Use densor1 to propagate concat through a small fully-connected neural network to compute the "intermediate energies" variable e. (≈1 lines)
-    e = None
+    e = densor1(concat) 
     # Use densor2 to propagate e through a small fully-connected neural network to compute the "energies" variable energies. (≈1 lines)
-    energies = None
+    energies = densor2(e) 
     # Use "activator" on "energies" to compute the attention weights "alphas" (≈ 1 line)
-    alphas = None
+    alphas = activator(energies)
     # Use dotor together with "alphas" and "a" to compute the context vector to be given to the next (post-attention) LSTM-cell (≈ 1 line)
-    context = None
+    context = dotor([alphas, a]) 
     ### END CODE HERE ###
     
     return context
@@ -251,26 +271,26 @@ def model(Tx, Ty, n_a, n_s, human_vocab_size, machine_vocab_size):
     ### START CODE HERE ###
     
     # Step 1: Define your pre-attention Bi-LSTM. Remember to use return_sequences=True. (≈ 1 line)
-    a = None
+    a = Bidirectional(LSTM(n_a, return_sequences=True))(X) 
     
     # Step 2: Iterate for Ty steps
-    for t in range(None):
+    for t in range(Ty):
     
         # Step 2.A: Perform one step of the attention mechanism to get back the context vector at step t (≈ 1 line)
-        context = None
+        context = one_step_attention(a, s)
         
         # Step 2.B: Apply the post-attention LSTM cell to the "context" vector.
         # Don't forget to pass: initial_state = [hidden state, cell state] (≈ 1 line)
-        s, _, c = None
+        s, _, c = post_activation_LSTM_cell(context, initial_state = [s, c])
         
         # Step 2.C: Apply Dense layer to the hidden state output of the post-attention LSTM (≈ 1 line)
-        out = None
+        out = output_layer(s)
         
         # Step 2.D: Append "out" to the "outputs" list (≈ 1 line)
-        None
+        outputs.append(out)
     
     # Step 3: Create model instance taking three inputs and returning the list of outputs. (≈ 1 line)
-    model = None
+    model = Model(inputs = [X,s0,c0], outputs = outputs, name='data_translation_model')
     
     ### END CODE HERE ###
     
@@ -375,8 +395,9 @@ model.summary()
 # In[ ]:
 
 ### START CODE HERE ### (≈2 lines)
-opt = None
-None
+opt =  Adam(lr=0.005, beta_1=0.9, beta_2=0.999, decay=0.01)
+model.compile(optimizer=opt, loss='categorical_crossentropy', metrics=['accuracy'])
+
 ### END CODE HERE ###
 
 
@@ -421,6 +442,7 @@ for example in EXAMPLES:
     
     source = string_to_int(example, Tx, human_vocab)
     source = np.array(list(map(lambda x: to_categorical(x, num_classes=len(human_vocab)), source))).swapaxes(0,1)
+    print(source)
     prediction = model.predict([source, s0, c0])
     prediction = np.argmax(prediction, axis = -1)
     output = [inv_machine_vocab[int(i)] for i in prediction]
